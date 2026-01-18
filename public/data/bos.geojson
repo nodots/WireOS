@@ -1,0 +1,20 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6122, 39.2904]
+      },
+      "properties": {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "layer": "institutions",
+        "title": "Prime Directive",
+        "notes": "The map may never be smarter than the show. If it is not named or shown on screen, it does not yet exist.",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "createdBy": "system"
+      }
+    }
+  ]
+}
