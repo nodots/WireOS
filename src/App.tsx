@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BosProvider } from './hooks/useBosData';
+import { DrawingProvider } from './hooks/useDrawing';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { MapContainer } from './components/Map/MapContainer';
 import { KeyboardShortcutsProvider } from './components/KeyboardShortcutsProvider';
@@ -9,18 +10,20 @@ function App() {
 
   return (
     <BosProvider>
-      <KeyboardShortcutsProvider
-        onOpenFeatureForm={() => setShowFeatureForm(true)}
-      >
-        <div className="app">
-          <Sidebar
-            showFeatureForm={showFeatureForm}
-            onOpenFeatureForm={() => setShowFeatureForm(true)}
-            onCloseFeatureForm={() => setShowFeatureForm(false)}
-          />
-          <MapContainer />
-        </div>
-      </KeyboardShortcutsProvider>
+      <DrawingProvider>
+        <KeyboardShortcutsProvider
+          onOpenFeatureForm={() => setShowFeatureForm(true)}
+        >
+          <div className="app">
+            <Sidebar
+              showFeatureForm={showFeatureForm}
+              onOpenFeatureForm={() => setShowFeatureForm(true)}
+              onCloseFeatureForm={() => setShowFeatureForm(false)}
+            />
+            <MapContainer />
+          </div>
+        </KeyboardShortcutsProvider>
+      </DrawingProvider>
     </BosProvider>
   );
 }

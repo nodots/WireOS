@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBosData } from '../../hooks/useBosData';
+import { useDrawing } from '../../hooks/useDrawing';
 import {
   LAYER_CONFIG,
   type BosFeature,
@@ -27,8 +28,8 @@ const LAYERS: { value: BosLayer; label: string }[] = [
 ];
 
 export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
-  const { state, addFeature, updateFeature, setDrawingMode, trackAddition } =
-    useBosData();
+  const { state, addFeature, updateFeature, trackAddition } = useBosData();
+  const { drawingMode, startDrawing, cancelDrawing } = useDrawing();
 
   const isEditing = editingFeature !== null && editingFeature !== undefined;
 
@@ -40,13 +41,12 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
     editingFeature?.properties.firstSeen ?? state.currentEpisode
   );
   const [notes, setNotes] = useState(editingFeature?.properties.notes ?? '');
-  const [isDrawing, setIsDrawing] = useState(false);
   const [geometry, setGeometry] = useState<
     [number, number][] | [number, number] | null
   >(null);
   const [warnings, setWarnings] = useState<EpisodeGateWarning[]>([]);
 
-  // When editing, geometry is already set
+  const isDrawing = drawingMode !== 'none';
   const hasGeometry = isEditing || geometry !== null;
 
   useEffect(() => {
@@ -78,25 +78,11 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
   }, [layer]);
 
   const handleStartDrawing = () => {
-    setIsDrawing(true);
     setGeometry(null);
     const mode = getDrawingMode();
-    setDrawingMode(mode);
-
-    const setCallback = (
-      window as unknown as {
-        __bosSetGeometryCallback?: (
-          cb: ((coords: [number, number][] | [number, number]) => void) | null
-        ) => void;
-      }
-    ).__bosSetGeometryCallback;
-
-    if (setCallback) {
-      setCallback((coords) => {
-        setGeometry(coords);
-        setIsDrawing(false);
-      });
-    }
+    startDrawing(mode, (coords) => {
+      setGeometry(coords);
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -111,7 +97,6 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
     }
 
     if (isEditing) {
-      // Update existing feature - keep original geometry and metadata
       const updatedFeature: BosFeature = {
         ...editingFeature,
         properties: {
@@ -123,7 +108,6 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
       };
       updateFeature(updatedFeature);
     } else {
-      // Create new feature
       if (!geometry) return;
 
       const geomType = LAYER_CONFIG[layer].geometryType;
@@ -166,7 +150,7 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
 
   const handleClose = () => {
     if (isDrawing) {
-      setDrawingMode('none');
+      cancelDrawing();
     }
     onClose();
   };
@@ -204,8 +188,7 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
                   setLayer(e.target.value as BosLayer);
                   setGeometry(null);
                   if (isDrawing) {
-                    setDrawingMode('none');
-                    setIsDrawing(false);
+                    cancelDrawing();
                   }
                 }}
                 disabled={isEditing}
@@ -259,7 +242,6 @@ export function FeatureForm({ editingFeature, onClose }: FeatureFormProps) {
                       className="btn btn-link"
                       onClick={() => {
                         setGeometry(null);
-                        setIsDrawing(false);
                       }}
                     >
                       Clear

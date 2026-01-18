@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useBosData } from '../../hooks/useBosData';
+import { useDrawing } from '../../hooks/useDrawing';
 import type { DrawingMode } from '../../types/bos';
 
 interface DrawingManagerProps {
@@ -15,7 +15,8 @@ interface DrawingState {
 }
 
 export function DrawingManager({ getMap }: DrawingManagerProps) {
-  const { state, dispatch } = useBosData();
+  const { drawingMode, cancelDrawing, completeDrawing } = useDrawing();
+
   const drawingStateRef = useRef<DrawingState>({
     mode: 'none',
     vertices: [],
@@ -23,10 +24,6 @@ export function DrawingManager({ getMap }: DrawingManagerProps) {
     previewLine: null,
     previewPolygon: null,
   });
-
-  const onGeometryComplete = useRef<
-    ((coords: [number, number][] | [number, number]) => void) | null
-  >(null);
 
   const cleanup = useCallback(() => {
     const ds = drawingStateRef.current;
@@ -56,17 +53,13 @@ export function DrawingManager({ getMap }: DrawingManagerProps) {
 
     if (ds.mode === 'point' && ds.vertices.length === 1) {
       const v = ds.vertices[0];
-      if (onGeometryComplete.current) {
-        onGeometryComplete.current([v.lng(), v.lat()]);
-      }
+      completeDrawing([v.lng(), v.lat()]);
     } else if (ds.mode === 'line' && ds.vertices.length >= 2) {
       const coords: [number, number][] = ds.vertices.map((v) => [
         v.lng(),
         v.lat(),
       ]);
-      if (onGeometryComplete.current) {
-        onGeometryComplete.current(coords);
-      }
+      completeDrawing(coords);
     } else if (ds.mode === 'polygon' && ds.vertices.length >= 3) {
       const coords: [number, number][] = ds.vertices.map((v) => [
         v.lng(),
@@ -74,14 +67,11 @@ export function DrawingManager({ getMap }: DrawingManagerProps) {
       ]);
       // Close the polygon
       coords.push(coords[0]);
-      if (onGeometryComplete.current) {
-        onGeometryComplete.current(coords);
-      }
+      completeDrawing(coords);
     }
 
     cleanup();
-    dispatch({ type: 'SET_DRAWING_MODE', payload: 'none' });
-  }, [getMap, cleanup, dispatch]);
+  }, [getMap, cleanup, completeDrawing]);
 
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
@@ -96,7 +86,6 @@ export function DrawingManager({ getMap }: DrawingManagerProps) {
       ds.vertices.push(latLng);
 
       if (ds.mode === 'point') {
-        // For points, immediately finish
         finishDrawing();
         return;
       }
@@ -167,67 +156,44 @@ export function DrawingManager({ getMap }: DrawingManagerProps) {
     };
   }, [getMap, handleMapClick, handleMapDblClick]);
 
-  // Sync drawing mode from state
+  // Sync drawing mode from context
   useEffect(() => {
     const ds = drawingStateRef.current;
     const map = getMap();
 
-    if (state.drawingMode !== ds.mode) {
+    if (drawingMode !== ds.mode) {
       cleanup();
-      ds.mode = state.drawingMode;
+      ds.mode = drawingMode;
 
-      // Change cursor based on mode
       if (map) {
-        if (state.drawingMode !== 'none') {
+        if (drawingMode !== 'none') {
           map.setOptions({ draggableCursor: 'crosshair' });
         } else {
           map.setOptions({ draggableCursor: null });
         }
       }
     }
-  }, [state.drawingMode, getMap, cleanup]);
+  }, [drawingMode, getMap, cleanup]);
 
-  // Expose callback setter for geometry completion
-  useEffect(() => {
-    // Store in window for access from FeatureForm
-    // This is a simple approach; a more robust solution would use context
-    (
-      window as unknown as {
-        __bosSetGeometryCallback: (
-          cb: ((coords: [number, number][] | [number, number]) => void) | null
-        ) => void;
-      }
-    ).__bosSetGeometryCallback = (cb) => {
-      onGeometryComplete.current = cb;
-    };
+  const handleCancel = useCallback(() => {
+    cleanup();
+    cancelDrawing();
+  }, [cleanup, cancelDrawing]);
 
-    return () => {
-      delete (
-        window as unknown as {
-          __bosSetGeometryCallback?: unknown;
-        }
-      ).__bosSetGeometryCallback;
-    };
-  }, []);
-
-  // Render drawing instructions when in drawing mode
-  if (state.drawingMode === 'none') {
+  if (drawingMode === 'none') {
     return null;
   }
 
   return (
     <div className="drawing-instructions">
-      {state.drawingMode === 'point' && <p>Click on the map to place a point</p>}
-      {state.drawingMode === 'line' && (
+      {drawingMode === 'point' && <p>Click on the map to place a point</p>}
+      {drawingMode === 'line' && (
         <p>Click to add points, double-click to finish the line</p>
       )}
-      {state.drawingMode === 'polygon' && (
+      {drawingMode === 'polygon' && (
         <p>Click to add points, double-click to close the polygon</p>
       )}
-      <button className="btn btn-secondary" onClick={() => {
-        cleanup();
-        dispatch({ type: 'SET_DRAWING_MODE', payload: 'none' });
-      }}>
+      <button className="btn btn-secondary" onClick={handleCancel}>
         Cancel
       </button>
     </div>

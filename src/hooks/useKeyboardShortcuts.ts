@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useBosData } from './useBosData';
+import { useDrawing } from './useDrawing';
 import type { BosLayer } from '../types/bos';
 
 const LAYER_KEYS: Record<string, BosLayer> = {
@@ -16,7 +17,8 @@ interface UseKeyboardShortcutsOptions {
 export function useKeyboardShortcuts({
   onOpenFeatureForm,
 }: UseKeyboardShortcutsOptions = {}) {
-  const { state, toggleLayer, setDrawingMode, setEditingFeature } = useBosData();
+  const { state, toggleLayer, setEditingFeature } = useBosData();
+  const { drawingMode, cancelDrawing } = useDrawing();
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -33,8 +35,8 @@ export function useKeyboardShortcuts({
 
       // Escape - cancel drawing mode or close editing
       if (e.key === 'Escape') {
-        if (state.drawingMode !== 'none') {
-          setDrawingMode('none');
+        if (drawingMode !== 'none') {
+          cancelDrawing();
         }
         if (state.editingFeature) {
           setEditingFeature(null);
@@ -56,7 +58,7 @@ export function useKeyboardShortcuts({
         return;
       }
     },
-    [state.drawingMode, state.editingFeature, toggleLayer, setDrawingMode, setEditingFeature, onOpenFeatureForm]
+    [drawingMode, state.editingFeature, toggleLayer, cancelDrawing, setEditingFeature, onOpenFeatureForm]
   );
 
   useEffect(() => {

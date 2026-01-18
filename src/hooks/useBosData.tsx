@@ -10,7 +10,6 @@ import type {
   BosFeature,
   BosFeatureCollection,
   BosLayer,
-  DrawingMode,
   SessionAdditions,
 } from '../types/bos';
 import {
@@ -22,7 +21,6 @@ interface BosState {
   data: BosFeatureCollection;
   visibleLayers: Record<BosLayer, boolean>;
   currentEpisode: string;
-  drawingMode: DrawingMode;
   sessionAdditions: SessionAdditions;
   isLoading: boolean;
   error: string | null;
@@ -36,7 +34,6 @@ type BosAction =
   | { type: 'DELETE_FEATURE'; payload: string }
   | { type: 'TOGGLE_LAYER'; payload: BosLayer }
   | { type: 'SET_CURRENT_EPISODE'; payload: string }
-  | { type: 'SET_DRAWING_MODE'; payload: DrawingMode }
   | { type: 'TRACK_ADDITION'; payload: { episode: string; layer: BosLayer } }
   | { type: 'IMPORT_DATA'; payload: BosFeatureCollection }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -52,7 +49,6 @@ const initialState: BosState = {
     borders: true,
   },
   currentEpisode: 'S01E01',
-  drawingMode: 'none',
   sessionAdditions: {},
   isLoading: true,
   error: null,
@@ -75,7 +71,6 @@ function bosReducer(state: BosState, action: BosAction): BosState {
           ...state.data,
           features: [...state.data.features, action.payload],
         },
-        drawingMode: 'none',
       };
 
     case 'UPDATE_FEATURE':
@@ -120,12 +115,6 @@ function bosReducer(state: BosState, action: BosAction): BosState {
       return {
         ...state,
         currentEpisode: action.payload,
-      };
-
-    case 'SET_DRAWING_MODE':
-      return {
-        ...state,
-        drawingMode: action.payload,
       };
 
     case 'TRACK_ADDITION': {
@@ -177,7 +166,6 @@ interface BosContextValue {
   setEditingFeature: (feature: BosFeature | null) => void;
   toggleLayer: (layer: BosLayer) => void;
   setCurrentEpisode: (episode: string) => void;
-  setDrawingMode: (mode: DrawingMode) => void;
   trackAddition: (episode: string, layer: BosLayer) => void;
   importData: (data: BosFeatureCollection) => void;
   exportData: () => void;
@@ -240,10 +228,6 @@ export function BosProvider({ children }: BosProviderProps) {
     dispatch({ type: 'SET_CURRENT_EPISODE', payload: episode });
   };
 
-  const setDrawingMode = (mode: DrawingMode) => {
-    dispatch({ type: 'SET_DRAWING_MODE', payload: mode });
-  };
-
   const trackAddition = (episode: string, layer: BosLayer) => {
     dispatch({ type: 'TRACK_ADDITION', payload: { episode, layer } });
   };
@@ -274,7 +258,6 @@ export function BosProvider({ children }: BosProviderProps) {
     setEditingFeature,
     toggleLayer,
     setCurrentEpisode,
-    setDrawingMode,
     trackAddition,
     importData,
     exportData,
