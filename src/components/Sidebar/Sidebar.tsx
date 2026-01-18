@@ -1,16 +1,24 @@
-import { useState } from 'react';
 import { useBosData } from '../../hooks/useBosData';
 import { LayerToggles } from './LayerToggles';
 import { EpisodeSelector } from './EpisodeSelector';
 import { ImportExport } from './ImportExport';
 import { FeatureForm } from '../FeatureForm/FeatureForm';
 
-export function Sidebar() {
+interface SidebarProps {
+  showFeatureForm: boolean;
+  onOpenFeatureForm: () => void;
+  onCloseFeatureForm: () => void;
+}
+
+export function Sidebar({
+  showFeatureForm,
+  onOpenFeatureForm,
+  onCloseFeatureForm,
+}: SidebarProps) {
   const { state, setEditingFeature } = useBosData();
-  const [showFeatureForm, setShowFeatureForm] = useState(false);
 
   const handleCloseForm = () => {
-    setShowFeatureForm(false);
+    onCloseFeatureForm();
     setEditingFeature(null);
   };
 
@@ -28,15 +36,22 @@ export function Sidebar() {
         <LayerToggles />
 
         <div className="sidebar-section">
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowFeatureForm(true)}
-          >
+          <button className="btn btn-primary" onClick={onOpenFeatureForm}>
             Add Feature
           </button>
+          <p className="help-text shortcut-hint">Press N to add a feature</p>
         </div>
 
         <ImportExport />
+
+        <div className="sidebar-section">
+          <h3>Keyboard Shortcuts</h3>
+          <ul className="shortcuts-list">
+            <li><kbd>1</kbd>-<kbd>4</kbd> Toggle layers</li>
+            <li><kbd>N</kbd> New feature</li>
+            <li><kbd>Esc</kbd> Cancel</li>
+          </ul>
+        </div>
       </div>
 
       {isFormOpen && (
