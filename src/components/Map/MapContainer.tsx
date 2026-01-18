@@ -36,10 +36,35 @@ export function MapContainer() {
   const getMap = useCallback(() => mapInstanceRef.current, []);
 
   if (loadError) {
+    const isApiKeyError =
+      loadError.message.includes('API key') ||
+      loadError.message.includes('not found');
+
     return (
       <div className="map-container map-error">
-        <p>Error loading Google Maps:</p>
-        <p>{loadError.message}</p>
+        <h3>Error loading Google Maps</h3>
+        <p className="error-detail">{loadError.message}</p>
+        {isApiKeyError && (
+          <div className="api-key-help">
+            <h4>Setup Instructions:</h4>
+            <ol>
+              <li>
+                Get an API key from{' '}
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Cloud Console
+                </a>
+              </li>
+              <li>Enable the <strong>Maps JavaScript API</strong></li>
+              <li>Copy <code>.env.example</code> to <code>.env</code></li>
+              <li>Add your API key to <code>VITE_GOOGLE_MAPS_API_KEY</code></li>
+              <li>Restart the dev server</li>
+            </ol>
+          </div>
+        )}
       </div>
     );
   }

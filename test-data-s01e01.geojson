@@ -1,0 +1,116 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6122, 39.2904]
+      },
+      "properties": {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "layer": "institutions",
+        "title": "Prime Directive",
+        "notes": "The map may never be smarter than the show. If it is not named or shown on screen, it does not yet exist.",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "createdBy": "system"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6347, 39.3025]
+      },
+      "properties": {
+        "id": "s01e01-001",
+        "layer": "institutions",
+        "title": "The Pit (McCulloh Homes)",
+        "firstSeen": "S01E01",
+        "notes": "D'Angelo's territory. The courtyard with the orange couch where the low-rises crew operates.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6119, 39.2908]
+      },
+      "properties": {
+        "id": "s01e01-002",
+        "layer": "institutions",
+        "title": "Baltimore Circuit Court",
+        "firstSeen": "S01E01",
+        "notes": "D'Angelo Barksdale's murder trial. McNulty talks to Judge Phelan about the Barksdales.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6155, 39.2897]
+      },
+      "properties": {
+        "id": "s01e01-003",
+        "layer": "institutions",
+        "title": "Homicide Unit",
+        "firstSeen": "S01E01",
+        "notes": "Baltimore Police Department Homicide. Bunk and McNulty's workplace.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.5915, 39.2825]
+      },
+      "properties": {
+        "id": "s01e01-004",
+        "layer": "institutions",
+        "title": "Orlando's",
+        "firstSeen": "S01E01",
+        "notes": "Strip club on South Broadway. Front business for the Barksdale organization.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6401, 39.2888]
+      },
+      "properties": {
+        "id": "s01e01-005",
+        "layer": "geography",
+        "title": "New York Fried Chicken",
+        "firstSeen": "S01E01",
+        "notes": "1301 W Baltimore St. Wee-Bey reminds D'Angelo they don't talk business in the car.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6452, 39.2931]
+      },
+      "properties": {
+        "id": "s01e01-006",
+        "layer": "institutions",
+        "title": "Western District",
+        "firstSeen": "S01E01",
+        "notes": "Police station. Where the detail eventually sets up.",
+        "createdAt": "2025-01-18T00:00:00.000Z",
+        "createdBy": "test"
+      }
+    }
+  ]
+}

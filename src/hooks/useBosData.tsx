@@ -17,6 +17,8 @@ import {
   validateBosFeatureCollection,
 } from '../utils/geojson';
 
+const STORAGE_KEY = 'wireos-bos-data';
+
 interface BosState {
   data: BosFeatureCollection;
   visibleLayers: Record<BosLayer, boolean>;
@@ -169,6 +171,7 @@ interface BosContextValue {
   trackAddition: (episode: string, layer: BosLayer) => void;
   importData: (data: BosFeatureCollection) => void;
   exportData: () => void;
+  resetData: () => void;
 }
 
 const BosContext = createContext<BosContextValue | null>(null);
@@ -180,8 +183,24 @@ interface BosProviderProps {
 export function BosProvider({ children }: BosProviderProps) {
   const [state, dispatch] = useReducer(bosReducer, initialState);
 
+  // Load data: try localStorage first, fall back to seed data
   useEffect(() => {
-    async function loadSeedData() {
+    async function loadData() {
+      // Try localStorage first
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          if (validateBosFeatureCollection(data)) {
+            dispatch({ type: 'SET_DATA', payload: data });
+            return;
+          }
+        } catch {
+          // Invalid localStorage data, fall through to seed data
+        }
+      }
+
+      // Fall back to seed data
       try {
         const response = await fetch('/data/bos.geojson');
         if (!response.ok) {
@@ -201,8 +220,15 @@ export function BosProvider({ children }: BosProviderProps) {
       }
     }
 
-    loadSeedData();
+    loadData();
   }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    if (!state.isLoading && state.data.features.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+  }, [state.data, state.isLoading]);
 
   const addFeature = (feature: BosFeature) => {
     dispatch({ type: 'ADD_FEATURE', payload: feature });
@@ -249,6 +275,22 @@ export function BosProvider({ children }: BosProviderProps) {
     URL.revokeObjectURL(url);
   };
 
+  const resetData = async () => {
+    localStorage.removeItem(STORAGE_KEY);
+    try {
+      const response = await fetch('/data/bos.geojson');
+      if (response.ok) {
+        const data = await response.json();
+        if (validateBosFeatureCollection(data)) {
+          dispatch({ type: 'SET_DATA', payload: data });
+        }
+      }
+    } catch {
+      // Ignore errors, just clear to empty
+      dispatch({ type: 'SET_DATA', payload: createEmptyFeatureCollection() });
+    }
+  };
+
   const value: BosContextValue = {
     state,
     dispatch,
@@ -261,6 +303,7 @@ export function BosProvider({ children }: BosProviderProps) {
     trackAddition,
     importData,
     exportData,
+    resetData,
   };
 
   return <BosContext.Provider value={value}>{children}</BosContext.Provider>;

@@ -4,12 +4,18 @@ import { validateBosFeatureCollection } from '../../utils/geojson';
 import type { BosFeatureCollection } from '../../types/bos';
 
 export function ImportExport() {
-  const { exportData, importData } = useBosData();
+  const { exportData, importData, resetData } = useBosData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   const handleExport = () => {
     exportData();
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Reset all data to seed? This will clear your localStorage and cannot be undone.')) {
+      resetData();
+    }
   };
 
   const handleImportClick = () => {
@@ -57,10 +63,13 @@ export function ImportExport() {
 
       <div className="button-group">
         <button className="btn" onClick={handleExport}>
-          Export GeoJSON
+          Export
         </button>
         <button className="btn" onClick={handleImportClick}>
-          Import GeoJSON
+          Import
+        </button>
+        <button className="btn" onClick={handleReset}>
+          Reset
         </button>
       </div>
 
@@ -75,7 +84,7 @@ export function ImportExport() {
       {importError && <div className="error-message">{importError}</div>}
 
       <p className="help-text">
-        Export your data, commit to Git, and share with collaborators.
+        Data auto-saves to localStorage. Export to share via Git.
       </p>
     </div>
   );

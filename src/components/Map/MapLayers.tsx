@@ -68,10 +68,11 @@ export function MapLayers({ map }: MapLayersProps) {
       const existingOverlay = overlaysRef.current.get(id);
 
       if (existingOverlay) {
-        if ('setVisible' in existingOverlay) {
-          existingOverlay.setVisible(isVisible);
-        } else if ('map' in existingOverlay) {
-          existingOverlay.map = isVisible ? map : null;
+        // Cast to duck type because MapOverlay union doesn't expose setMap directly,
+        // but all concrete types (Marker, Polyline, Polygon) have it
+        const mapOverlay = existingOverlay as { setMap?: (map: google.maps.Map | null) => void };
+        if (typeof mapOverlay.setMap === 'function') {
+          mapOverlay.setMap(isVisible ? map : null);
         }
         return;
       }
@@ -87,10 +88,10 @@ export function MapLayers({ map }: MapLayersProps) {
 
       if (overlay) {
         if (!isVisible) {
-          if ('setVisible' in overlay) {
-            overlay.setVisible(false);
-          } else if ('map' in overlay) {
-            overlay.map = null;
+          // Same duck type cast as above for newly created overlays
+          const mapOverlay = overlay as { setMap?: (map: google.maps.Map | null) => void };
+          if (typeof mapOverlay.setMap === 'function') {
+            mapOverlay.setMap(null);
           }
         }
         overlaysRef.current.set(id, overlay);
