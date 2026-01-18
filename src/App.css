@@ -450,3 +450,35 @@ body {
   font-size: 13px;
   margin-bottom: 4px;
 }
+
+.info-window-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #dee2e6;
+}
+
+.btn-info-edit,
+.btn-info-delete {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  cursor: pointer;
+  background: white;
+}
+
+.btn-info-edit:hover {
+  background: #e9ecef;
+}
+
+.btn-info-delete {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-info-delete:hover {
+  background: #dc3545;
+  color: white;
+}

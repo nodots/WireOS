@@ -1,11 +1,20 @@
 import { useState } from 'react';
+import { useBosData } from '../../hooks/useBosData';
 import { LayerToggles } from './LayerToggles';
 import { EpisodeSelector } from './EpisodeSelector';
 import { ImportExport } from './ImportExport';
 import { FeatureForm } from '../FeatureForm/FeatureForm';
 
 export function Sidebar() {
+  const { state, setEditingFeature } = useBosData();
   const [showFeatureForm, setShowFeatureForm] = useState(false);
+
+  const handleCloseForm = () => {
+    setShowFeatureForm(false);
+    setEditingFeature(null);
+  };
+
+  const isFormOpen = showFeatureForm || state.editingFeature !== null;
 
   return (
     <aside className="sidebar">
@@ -30,8 +39,11 @@ export function Sidebar() {
         <ImportExport />
       </div>
 
-      {showFeatureForm && (
-        <FeatureForm onClose={() => setShowFeatureForm(false)} />
+      {isFormOpen && (
+        <FeatureForm
+          editingFeature={state.editingFeature}
+          onClose={handleCloseForm}
+        />
       )}
     </aside>
   );

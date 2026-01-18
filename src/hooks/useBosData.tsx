@@ -26,18 +26,22 @@ interface BosState {
   sessionAdditions: SessionAdditions;
   isLoading: boolean;
   error: string | null;
+  editingFeature: BosFeature | null;
 }
 
 type BosAction =
   | { type: 'SET_DATA'; payload: BosFeatureCollection }
   | { type: 'ADD_FEATURE'; payload: BosFeature }
+  | { type: 'UPDATE_FEATURE'; payload: BosFeature }
+  | { type: 'DELETE_FEATURE'; payload: string }
   | { type: 'TOGGLE_LAYER'; payload: BosLayer }
   | { type: 'SET_CURRENT_EPISODE'; payload: string }
   | { type: 'SET_DRAWING_MODE'; payload: DrawingMode }
   | { type: 'TRACK_ADDITION'; payload: { episode: string; layer: BosLayer } }
   | { type: 'IMPORT_DATA'; payload: BosFeatureCollection }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null };
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_EDITING_FEATURE'; payload: BosFeature | null };
 
 const initialState: BosState = {
   data: createEmptyFeatureCollection(),
@@ -52,6 +56,7 @@ const initialState: BosState = {
   sessionAdditions: {},
   isLoading: true,
   error: null,
+  editingFeature: null,
 };
 
 function bosReducer(state: BosState, action: BosAction): BosState {
@@ -71,6 +76,35 @@ function bosReducer(state: BosState, action: BosAction): BosState {
           features: [...state.data.features, action.payload],
         },
         drawingMode: 'none',
+      };
+
+    case 'UPDATE_FEATURE':
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          features: state.data.features.map((f) =>
+            f.properties.id === action.payload.properties.id ? action.payload : f
+          ),
+        },
+        editingFeature: null,
+      };
+
+    case 'DELETE_FEATURE':
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          features: state.data.features.filter(
+            (f) => f.properties.id !== action.payload
+          ),
+        },
+      };
+
+    case 'SET_EDITING_FEATURE':
+      return {
+        ...state,
+        editingFeature: action.payload,
       };
 
     case 'TOGGLE_LAYER':
@@ -138,6 +172,9 @@ interface BosContextValue {
   state: BosState;
   dispatch: React.Dispatch<BosAction>;
   addFeature: (feature: BosFeature) => void;
+  updateFeature: (feature: BosFeature) => void;
+  deleteFeature: (id: string) => void;
+  setEditingFeature: (feature: BosFeature | null) => void;
   toggleLayer: (layer: BosLayer) => void;
   setCurrentEpisode: (episode: string) => void;
   setDrawingMode: (mode: DrawingMode) => void;
@@ -183,6 +220,18 @@ export function BosProvider({ children }: BosProviderProps) {
     dispatch({ type: 'ADD_FEATURE', payload: feature });
   };
 
+  const updateFeature = (feature: BosFeature) => {
+    dispatch({ type: 'UPDATE_FEATURE', payload: feature });
+  };
+
+  const deleteFeature = (id: string) => {
+    dispatch({ type: 'DELETE_FEATURE', payload: id });
+  };
+
+  const setEditingFeature = (feature: BosFeature | null) => {
+    dispatch({ type: 'SET_EDITING_FEATURE', payload: feature });
+  };
+
   const toggleLayer = (layer: BosLayer) => {
     dispatch({ type: 'TOGGLE_LAYER', payload: layer });
   };
@@ -220,6 +269,9 @@ export function BosProvider({ children }: BosProviderProps) {
     state,
     dispatch,
     addFeature,
+    updateFeature,
+    deleteFeature,
+    setEditingFeature,
     toggleLayer,
     setCurrentEpisode,
     setDrawingMode,

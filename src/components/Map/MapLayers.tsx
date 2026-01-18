@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useBosData } from '../../hooks/useBosData';
 import type { BosFeature } from '../../types/bos';
 import { LAYER_CONFIG } from '../../types/bos';
@@ -14,9 +14,44 @@ type MapOverlay =
   | google.maps.Polygon;
 
 export function MapLayers({ map }: MapLayersProps) {
-  const { state } = useBosData();
+  const { state, setEditingFeature, deleteFeature } = useBosData();
   const overlaysRef = useRef<Map<string, MapOverlay>>(new Map());
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const currentFeatureRef = useRef<BosFeature | null>(null);
+
+  const handleEdit = useCallback(() => {
+    if (currentFeatureRef.current) {
+      setEditingFeature(currentFeatureRef.current);
+      infoWindowRef.current?.close();
+    }
+  }, [setEditingFeature]);
+
+  const handleDelete = useCallback(() => {
+    if (currentFeatureRef.current) {
+      const confirmed = window.confirm(
+        `Delete "${currentFeatureRef.current.properties.title}"?`
+      );
+      if (confirmed) {
+        deleteFeature(currentFeatureRef.current.properties.id);
+        infoWindowRef.current?.close();
+      }
+    }
+  }, [deleteFeature]);
+
+  // Set up global handlers for info window buttons
+  useEffect(() => {
+    const win = window as Window & {
+      __bosEditFeature?: () => void;
+      __bosDeleteFeature?: () => void;
+    };
+    win.__bosEditFeature = handleEdit;
+    win.__bosDeleteFeature = handleDelete;
+
+    return () => {
+      delete win.__bosEditFeature;
+      delete win.__bosDeleteFeature;
+    };
+  }, [handleEdit, handleDelete]);
 
   useEffect(() => {
     if (!infoWindowRef.current) {
@@ -33,19 +68,22 @@ export function MapLayers({ map }: MapLayersProps) {
       const existingOverlay = overlaysRef.current.get(id);
 
       if (existingOverlay) {
-        // Update visibility of existing overlay
         if ('setVisible' in existingOverlay) {
           existingOverlay.setVisible(isVisible);
         } else if ('map' in existingOverlay) {
-          // AdvancedMarkerElement uses map property
           existingOverlay.map = isVisible ? map : null;
         }
         return;
       }
 
-      // Create new overlay
       const color = LAYER_CONFIG[layer].color;
-      const overlay = createOverlay(feature, map, color, infoWindowRef.current);
+      const overlay = createOverlay(
+        feature,
+        map,
+        color,
+        infoWindowRef.current,
+        currentFeatureRef
+      );
 
       if (overlay) {
         if (!isVisible) {
@@ -59,7 +97,6 @@ export function MapLayers({ map }: MapLayersProps) {
       }
     });
 
-    // Remove overlays that no longer exist in data
     overlaysRef.current.forEach((overlay, id) => {
       if (!currentFeatureIds.has(id)) {
         removeOverlay(overlay);
@@ -68,7 +105,6 @@ export function MapLayers({ map }: MapLayersProps) {
     });
   }, [map, state.data, state.visibleLayers]);
 
-  // Cleanup on unmount
   useEffect(() => {
     const overlays = overlaysRef.current;
     const infoWindow = infoWindowRef.current;
@@ -90,9 +126,25 @@ function createOverlay(
   feature: BosFeature,
   map: google.maps.Map,
   color: string,
-  infoWindow: google.maps.InfoWindow | null
+  infoWindow: google.maps.InfoWindow | null,
+  currentFeatureRef: React.MutableRefObject<BosFeature | null>
 ): MapOverlay | null {
   const { geometry, properties } = feature;
+
+  const openInfoWindow = (
+    position?: google.maps.LatLng | null,
+    anchor?: google.maps.Marker
+  ) => {
+    if (!infoWindow) return;
+    currentFeatureRef.current = feature;
+    infoWindow.setContent(createInfoContent(properties));
+    if (anchor) {
+      infoWindow.open(map, anchor);
+    } else if (position) {
+      infoWindow.setPosition(position);
+      infoWindow.open(map);
+    }
+  };
 
   switch (geometry.type) {
     case 'Point': {
@@ -112,10 +164,7 @@ function createOverlay(
       });
 
       marker.addListener('click', () => {
-        if (infoWindow) {
-          infoWindow.setContent(createInfoContent(properties));
-          infoWindow.open(map, marker);
-        }
+        openInfoWindow(null, marker);
       });
 
       return marker;
@@ -132,11 +181,7 @@ function createOverlay(
       });
 
       polyline.addListener('click', (e: google.maps.MapMouseEvent) => {
-        if (infoWindow && e.latLng) {
-          infoWindow.setContent(createInfoContent(properties));
-          infoWindow.setPosition(e.latLng);
-          infoWindow.open(map);
-        }
+        openInfoWindow(e.latLng);
       });
 
       return polyline;
@@ -157,18 +202,13 @@ function createOverlay(
       });
 
       polygon.addListener('click', (e: google.maps.MapMouseEvent) => {
-        if (infoWindow && e.latLng) {
-          infoWindow.setContent(createInfoContent(properties));
-          infoWindow.setPosition(e.latLng);
-          infoWindow.open(map);
-        }
+        openInfoWindow(e.latLng);
       });
 
       return polygon;
     }
 
     case 'MultiPolygon': {
-      // For simplicity, render as multiple polygons but return the first one
       const allPaths = geometry.coordinates.flatMap((poly) =>
         poly.map((ring) => ring.map(([lng, lat]) => ({ lat, lng })))
       );
@@ -183,11 +223,7 @@ function createOverlay(
       });
 
       polygon.addListener('click', (e: google.maps.MapMouseEvent) => {
-        if (infoWindow && e.latLng) {
-          infoWindow.setContent(createInfoContent(properties));
-          infoWindow.setPosition(e.latLng);
-          infoWindow.open(map);
-        }
+        openInfoWindow(e.latLng);
       });
 
       return polygon;
@@ -216,6 +252,10 @@ function createInfoContent(properties: BosFeature['properties']): string {
   if (properties.notes) {
     content += `<p>${escapeHtml(properties.notes)}</p>`;
   }
+  content += `<div class="info-window-actions">`;
+  content += `<button onclick="window.__bosEditFeature()" class="btn-info-edit">Edit</button>`;
+  content += `<button onclick="window.__bosDeleteFeature()" class="btn-info-delete">Delete</button>`;
+  content += `</div>`;
   content += `</div>`;
   return content;
 }
